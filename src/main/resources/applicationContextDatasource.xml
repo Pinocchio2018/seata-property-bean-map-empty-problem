@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd">
+	<description>数据源配置</description>
+
+	<!-- DATA SOURCE 基本配置======================================== -->
+	<bean id="parentHikariConfig" class="com.zaxxer.hikari.HikariConfig"
+		abstract="true">
+		<!-- 等待连接池分配连接的最大时长(毫秒),超过这个时长还没可用的连接则发生SQLException 默认30秒 -->
+		<property name="connectionTimeout" value="20000" />
+		<!-- 生效时间(毫秒),默认5秒 -->
+		<property name="validationTimeout" value="5000" />
+		<!-- 一个连接空闲状态的最大时长(毫秒),超时则被释放(retired),缺省:10分钟 -->
+		<property name="idleTimeout" value="250000" />
+		<!-- 连接池初始化失败的等待时间(毫秒),如果超时,那么会抛出一个PoolInitializationException异常,默认1毫秒 -->
+		<property name="initializationFailTimeout" value="5" />
+		<!-- 一个连接的生命时长(毫秒),超时而且没被使用则被释放(retired),缺省:30分钟 -->
+		<!-- 建议设置比数据库超时时长少30秒,参考MySQL wait_timeout参数(show variables like '%timeout%';) -->
+		<property name="maxLifetime" value="300000" />
+		<!-- 连接被占用的超时时间(毫秒),适用于网络不好的情况造成数据库连接瞬断后无法释放,默认0,禁用连接泄露检测 -->
+		<!-- 必须要大于2秒,且不能大于 maxLifetime -->
+		<property name="leakDetectionThreshold" value="300000" />
+		<!-- 获取连接时的判断是否有效的语句,默认使用 connection自己的isValid测试 -->
+		<property name="connectionTestQuery" value="SELECT 1 " />
+		<!-- 连接池中允许的最大连接数,默认10 -->
+		<property name="maximumPoolSize" value="30" />
+		<!-- 连接池中允许的最小空闲连接数,默认-1 -->
+		<property name="minimumIdle" value="5" />
+		<!-- 是否自动提交 -->
+		<property name="autoCommit" value="true" />
+	</bean>
+
+	<!-- 交易1库======================================== -->
+	<bean id="dataSourceOnline1" class="com.zaxxer.hikari.HikariDataSource"
+		destroy-method="close">
+		<constructor-arg>
+			<bean class="com.zaxxer.hikari.HikariConfig" parent="parentHikariConfig">
+				<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+				<property name="jdbcUrl" value="jdbc:mysql://your-mysql-database?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;useLocalSessionState=true" />
+				<property name="username" value="your-mysql-user" />
+				<property name="password" value="your-mysql-pwd" />
+			</bean>
+		</constructor-arg>
+	</bean>
+
+	<bean id="seataDataSource"
+		  class="io.seata.rm.datasource.DataSourceProxy">
+		<constructor-arg ref="dataSourceOnline1"/>
+	</bean>
+
+</beans>
